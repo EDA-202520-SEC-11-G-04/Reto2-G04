@@ -1,12 +1,14 @@
 import sys
-
+from tabulate import tabulate
+import App.logic as logic
+from datetime import datetime
 
 def new_logic():
     """
         Se crea una instancia del controlador
     """
-    #TODO: Llamar la función de la lógica donde se crean las estructuras de datos
-    pass
+    return logic.new_logic()
+    
 
 def print_menu():
     print("Bienvenido")
@@ -23,8 +25,44 @@ def load_data(control):
     """
     Carga los datos
     """
-    #TODO: Realizar la carga de datos
-    pass
+    
+    filename = input("Indiquez le chemin du fichier CSV: ")
+    control = logic.load_data(control, filename)
+    
+    if control and "elements" in control:
+        elements = control["elements"]
+
+        filtered_data = []
+        sample = elements[:5] + elements[-5:]
+        for t in sample:
+            start_str = t.get("pickup_datetime", "")
+            end_str = t.get("dropoff_datetime", "")
+            duration = ""
+
+            # Calcul de la durée si les deux dates sont présentes et valides
+            try:
+                start = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+                end = datetime.strptime(end_str, "%Y-%m-%d %H:%M:%S")
+                duration = round((end - start).total_seconds() / 60, 2)
+            except:
+                pass  # si une date est invalide, on laisse la durée vide
+
+            filtered_data.append({
+                "Inicio": start_str,
+                "Fin": end_str,
+                "Duración (min)": duration,
+                "Distancia (mi)": t.get("trip_distance", ""),
+                "Costo total ($)": t.get("total_amount", "")
+            })
+
+        print("\nPrimeros 5 trayectos:")
+        print(tabulate(filtered_data[:5], headers="keys", tablefmt="grid", showindex=True))
+
+        print("\nÚltimos 5 trayectos:")
+        print(tabulate(filtered_data[-5:], headers="keys", tablefmt="grid", showindex=True))
+
+    return control
+   
 
 
 def print_data(control, id):
@@ -32,7 +70,7 @@ def print_data(control, id):
         Función que imprime un dato dado su ID
     """
     #TODO: Realizar la función para imprimir un elemento
-    pass
+    return logic.get_data(control,id)
 
 def print_req_1(control):
     """
