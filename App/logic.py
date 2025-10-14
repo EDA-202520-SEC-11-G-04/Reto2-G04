@@ -56,27 +56,17 @@ def get_data(catalog, id):
         return None
 
 
+
 def req_1(control, fecha_inicio_str, fecha_fin_str, n):
     """
     Requerimiento 1:
-    - Filtra los trayectos cuya pickup_datetime está entre fecha_inicio_str y fecha_fin_str (inclusive).
-    - Ordena del más antiguo al más reciente.
-    - Devuelve los N primeros y N últimos (si el filtro produce < 2N trayectos, devuelve todos).
-    - Retorna un diccionario con:
-        - tiempo_ejecucion_ms
-        - total_trayectos
-        - primeros: lista de dicts con los campos requeridos
-        - ultimos: lista de dicts con los campos requeridos (vacía si no hay)
-    Campos devueltos por trayecto:
-        - "Inicio" (YYYY-MM-DD HH:MM:SS)
-        - "Fin"   (YYYY-MM-DD HH:MM:SS)
-        - "Duración (min)" (float, 2 decimales)
-        - "Distancia (mi)" (float)
-        - "Costo total ($)" (float)
+    - Filtra los trayectos cuya 'Inicio' está entre fecha_inicio_str y fecha_fin_str (inclusive).
+    - Ordena del más antiguo al más reciente (usando merge_sort de array_list).
+    - Devuelve los N primeros y N últimos trayectos (si el filtro produce < 2N, devuelve todos).
     """
 
-    # Validaciones básicas
-    if not control or "elements" not in control or not isinstance(control["elements"], list):
+    # Vérification du control
+    if not control or "elements" not in control:
         return {
             "tiempo_ejecucion_ms": 0.0,
             "total_trayectos": 0,
@@ -85,7 +75,7 @@ def req_1(control, fecha_inicio_str, fecha_fin_str, n):
             "mensaje": "Control inválido o sin elementos."
         }
 
-    # Parseo de las fechas de entrada (si fallan lanzar excepción)
+    # Parsing des dates d'entrée
     try:
         fecha_inicio = datetime.strptime(fecha_inicio_str, "%Y-%m-%d %H:%M:%S")
         fecha_fin = datetime.strptime(fecha_fin_str, "%Y-%m-%d %H:%M:%S")
@@ -100,48 +90,37 @@ def req_1(control, fecha_inicio_str, fecha_fin_str, n):
 
     inicio_t = time.time()
 
-    # Filtrar y almacenar solo los trayectos válidos dentro del rango con la fecha parseada
-    filtrados = []
+    # --- Filtrage ---
+    filtrados = list.new_list()
+
     for t in control["elements"]:
         try:
-            pickup_s = t.get("pickup_datetime", "")
-            # parseo inline
-            pickup_dt = datetime.strptime(pickup_s, "%Y-%m-%d %H:%M:%S")
-            if fecha_inicio <= pickup_dt <= fecha_fin:
-                # intentar parsear dropoff para calcular duración; si falla, se dejará duración como None
-                dropoff_s = t.get("dropoff_datetime", "")
+            inicio_s = t.get("pickup_datetime", "")
+            fin_s = t.get("dropoff_datetime", "")
+
+            inicio_dt = datetime.strptime(inicio_s, "%Y-%m-%d %H:%M:%S")
+
+            if fecha_inicio <= inicio_dt <= fecha_fin:
                 try:
-                    dropoff_dt = datetime.strptime(dropoff_s, "%Y-%m-%d %H:%M:%S")
-                    dur_min = round((dropoff_dt - pickup_dt).total_seconds() / 60, 2)
-                    dropoff_fmt = dropoff_s
+                    fin_dt = datetime.strptime(fin_s, "%Y-%m-%d %H:%M:%S")
+                    dur_min = round((fin_dt - inicio_dt).total_seconds() / 60, 2)
                 except Exception:
                     dur_min = None
-                    dropoff_fmt = dropoff_s if dropoff_s else ""
 
-                # convertir numericamente distancia y total_amount si es posible
-                try:
-                    distancia = float(t.get("trip_distance", 0.0))
-                except Exception:
-                    distancia = 0.0
-                try:
-                    costo = float(t.get("total_amount", 0.0))
-                except Exception:
-                    costo = 0.0
+                distancia = float(t.get("trip_distance", 0.0))
+                costo = float(t.get("total_amount", 0.0))
 
-                filtrados.append({
-                    "_pickup_dt": pickup_dt,            # campo auxiliar para ordenar
-                    "Inicio": pickup_s,
-                    "Fin": dropoff_fmt,
+                list.add_last(filtrados, {
+                    "Inicio": inicio_s,
+                    "Fin": fin_s,
                     "Duración (min)": dur_min,
                     "Distancia (mi)": distancia,
                     "Costo total ($)": costo
                 })
-        except Exception:
-            # ignorar filas con pickup mal formateado u otros errores
+        except:
             continue
 
-    total = len(filtrados)
-
+    total = list.size(filtrados)
     if total == 0:
         fin_t = time.time()
         return {
@@ -152,27 +131,30 @@ def req_1(control, fecha_inicio_str, fecha_fin_str, n):
             "mensaje": "No se encontraron trayectos en el rango indicado."
         }
 
-    # Ordenar por pickup datetime (campo auxiliar)
-    filtrados.sort(key=lambda x: x["_pickup_dt"])  # del más antiguo al más reciente
+    # --- Tri sur 'Inicio' ---
+    filtrados = list.merge_sort(filtrados, sort_criteria_inicio)
 
-    # Quitar campo auxiliar y preparar listas resultado
-    # Seleccionar N primeros y N últimos según la regla (si < 2N devolver todos)
+    # --- Extraction des premiers et derniers ---
+    elements = filtrados["elements"]
     if total <= 2 * n:
-        primeros_lista = [ {k:v for k,v in item.items() if k != "_pickup_dt"} for item in filtrados ]
-        ultimos_lista = []
+        primeros = elements
+        ultimos = []
     else:
-        primeros_lista = [ {k:v for k,v in item.items() if k != "_pickup_dt"} for item in filtrados[:n] ]
-        ultimos_lista = [ {k:v for k,v in item.items() if k != "_pickup_dt"} for item in filtrados[-n:] ]
+        primeros = elements[:n]
+        ultimos = elements[-n:]
 
     fin_t = time.time()
-    tiempo_ms = round((fin_t - inicio_t) * 1000, 2)
 
     return {
-        "tiempo_ejecucion_ms": tiempo_ms,
+        "tiempo_ejecucion_ms": round((fin_t - inicio_t) * 1000, 2),
         "total_trayectos": total,
-        "primeros": primeros_lista,
-        "ultimos": ultimos_lista
+        "primeros": primeros,
+        "ultimos": ultimos
     }
+
+
+def sort_criteria_inicio(t1, t2):
+    return t1["Inicio"] < t2["Inicio"]
 
 def req_2(catalog):
     """

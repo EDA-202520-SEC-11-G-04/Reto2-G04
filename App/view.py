@@ -77,7 +77,32 @@ def print_req_1(control):
         Función que imprime la solución del Requerimiento 1 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 1
-    pass
+    fecha_ini=input("fecha inicial del filtro (YYYY-MM-DD HH:MM:SS) :")
+    fecha_fin=input("fecha final del filtro (YYYY-MM-DD HH:MM:SS) :")
+    N=int(input("N primeros y N últimos : "))
+    res=logic.req_1(control,fecha_ini, fecha_fin, N)
+    
+    print(f"\n Tiempo de ejecución: {res['tiempo_ejecucion_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
+
+    if "mensaje" in res:
+        print(res["mensaje"])
+        return
+
+    # Si no trayecto
+    if not res["primeros"]:
+        print("No hay trayectos para mostrar.")
+        return
+
+    # Construire les tableaux pour tabulate
+    headers = ["Inicio", "Fin", "Duración (min)", "Distancia (mi)", "Costo total ($)"]
+
+    print("Primeros trayectos:")
+    print(tabulate(res["primeros"], headers="keys", tablefmt="grid", floatfmt=".2f"))
+
+    if res["ultimos"]:
+        print("\n Últimos trayectos:")
+        print(tabulate(res["ultimos"], headers="keys", tablefmt="grid", floatfmt=".2f"))
 
 
 def print_req_2(control):
