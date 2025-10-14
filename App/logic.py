@@ -6,6 +6,7 @@ from datetime import datetime
 from math import radians, sin, cos, sqrt, atan2
 import DataStructures.array_list as list
 from tabulate import tabulate
+from DataStructures.Map import map as mp
 
 default_limit = 1000
 sys.setrecursionlimit(default_limit*10)
@@ -171,13 +172,115 @@ def req_3(catalog):
     # TODO: Modificar el requerimiento 3
     pass
 
+def sort_criteria_dropoff_desc(t1, t2):
+    """
+    Critère de tri : du plus récent au plus ancien selon dropoff_datetime
+    """
+    try:
+        dt1 = datetime.strptime(t1["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
+        dt2 = datetime.strptime(t2["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
+        return dt1 > dt2   # True si t1 est plus récent → tri décroissant
+    except:
+        return False
+    
+def sort_criteria_dropoff_desc(t1, t2):
+    """
+    Critère de tri : du plus récent au plus ancien selon dropoff_datetime
+    """
+    try:
+        dt1 = datetime.strptime(t1["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
+        dt2 = datetime.strptime(t2["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
+        return dt1 > dt2   # True si t1 est plus récent → tri décroissant
+    except:
+        return False
 
-def req_4(catalog):
+
+def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
     """
-    Retorna el resultado del requerimiento 4
+    Requerimiento 4:
+    - Filtra los trayectos terminados en una fecha específica.
+    - Selecciona los que ocurren ANTES o DESPUES de una hora dada.
+    - Usa una tabla hash con llave = fecha de terminación.
+    - Ordena los resultados del más reciente al más antiguo.
     """
-    # TODO: Modificar el requerimiento 4
-    pass
+
+    if not catalog or "elements" not in catalog:
+        return {
+            "tiempo_ms": 0.0,
+            "total_trayectos": 0,
+            "primeros": list.new_list(),
+            "ultimos": list.new_list(),
+            "mensaje": "Catálogo inválido o vacío."
+        }
+
+    try:
+        fecha_terminacion = datetime.strptime(fecha_terminacion_str, "%Y-%m-%d").date()
+        tiempo_ref = datetime.strptime(tiempo_ref_str, "%H:%M:%S").time()
+    except Exception as e:
+        return {
+            "tiempo_ms": 0.0,
+            "total_trayectos": 0,
+            "primeros": list.new_list(),
+            "ultimos": list.new_list(),
+            "mensaje": f"Formato de fecha/hora inválido: {e}"
+        }
+
+    inicio_t = time.time()
+
+    # --- Création de la table hash ---
+    tabla = mp.new_map(100, 0.5)
+
+    # --- Filtrer les trajets ---
+    for t in catalog["elements"]:
+        try:
+            drop_dt = datetime.strptime(t["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
+        except:
+            continue
+
+        if drop_dt.date() == fecha_terminacion:
+            drop_time = drop_dt.time()
+            cond = (momento == "ANTES" and drop_time < tiempo_ref) or \
+                   (momento == "DESPUES" and drop_time > tiempo_ref)
+
+            if cond:
+                # Si la date n’existe pas encore dans la table, l’ajouter
+                if not mp.contains(tabla, fecha_terminacion_str):
+                    mp.put(tabla, fecha_terminacion_str, list.new_list())
+
+                trips = mp.get(tabla, fecha_terminacion_str)
+                list.add_last(trips, t)
+                mp.put(tabla, fecha_terminacion_str, trips)
+
+    # --- Récupérer les trajets filtrés ---
+    filtrados = mp.get(tabla, fecha_terminacion_str)
+    if not filtrados or list.size(filtrados) == 0:
+        fin_t = time.time()
+        return {
+            "tiempo_ms": round((fin_t - inicio_t) * 1000, 2),
+            "total_trayectos": 0,
+            "primeros": list.new_list(),
+            "ultimos": list.new_list(),
+            "mensaje": "No se encontraron trayectos en el rango indicado."
+        }
+
+    # --- Trier du plus récent au plus ancien ---
+    filtrados = list.merge_sort(filtrados, sort_criteria_dropoff_desc)
+
+    total = list.size(filtrados)
+
+    # --- Extraire N premiers et N derniers ---
+    primeros = list.sub_list(filtrados, 0, min(n, total))
+    ultimos = list.sub_list(filtrados, max(0, total - n), min(n, total))
+
+    fin_t = time.time()
+
+    return {
+        "tiempo_ms": round((fin_t - inicio_t) * 1000, 2),
+        "total_trayectos": total,
+        "primeros": primeros,
+        "ultimos": ultimos
+    }
+
 
 
 def req_5(catalog):
