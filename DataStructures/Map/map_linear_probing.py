@@ -122,7 +122,6 @@ def size(my_map):
 def is_empty(my_map):
     return my_map["size"] == 0
 
-from DataStructures.List import array_list as lt
 
 def key_set(my_map):
     keys = al.new_list()

@@ -125,8 +125,39 @@ def print_req_4(control):
     """
         Función que imprime la solución del Requerimiento 4 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 4
-    pass
+    fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
+    momento = input("Momento ('ANTES' o 'DESPUES'): ").upper()
+    tiempo_ref = input("Hora de referencia (HH:MM:SS): ")
+    n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
+
+    res = logic.req_4(control, fecha_terminacion, momento, tiempo_ref, n)
+
+    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
+
+    if "mensaje" in res:
+        print(res["mensaje"])
+        return
+
+    if not res["primeros"]:
+        print("No hay trayectos para mostrar.")
+        return
+
+    # Colonnes qu’on veut afficher
+    headers = [
+        "pickup_datetime", "pickup_datetime", "pickup_latitude", "dropoff_datetime",
+        "dropoff_longitude", "dropoff_latitude", "trip_distance", "total_amount"
+    ]
+
+    # Convertir les listes pour tabulate
+    print("Primeros trayectos:")
+    primeros = [t for t in res["primeros"]["elements"]]
+    print(tabulate(primeros, headers="keys", tablefmt="grid", floatfmt=".2f"))
+
+    if res["ultimos"]:
+        print("\nÚltimos trayectos:")
+        ultimos = [t for t in res["ultimos"]["elements"]]
+        print(tabulate(ultimos, headers="keys", tablefmt="grid", floatfmt=".2f"))
 
 
 def print_req_5(control):
