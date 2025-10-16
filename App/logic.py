@@ -165,12 +165,53 @@ def req_2(catalog):
     pass
 
 
-def req_3(catalog):
+def req_3(catalog, distancia_inicial, distancia_final, n):
     """
     Retorna el resultado del requerimiento 3
     """
-    # TODO: Modificar el requerimiento 3
-    pass
+    inicio = time.process_time()  # Obtener el tiempo inicial
+    
+    viajes_filtrados = []  # Crear una nueva lista para los viajes filtrados
+    
+    for i in range(len(catalog)):
+        viaje = catalog[i]  # Obtener el elemento actual
+        try:
+            distancia = float(viaje.get("trip_distance", 0))  # Convertir a float, con manejo de errores
+        except ValueError:
+            continue  # Si no se puede convertir, saltar este viaje
+        
+        if distancia >= distancia_inicial and distancia <= distancia_final:
+            viajes_filtrados.append(viaje)  # Agregar el viaje a la lista filtrada
+    if len(viajes_filtrados) == 0:
+        return {"mensaje": "No hay trayectos en ese rango de distancia"}
+    
+    # Usar una lambda directamente en sorted() para el ordenamiento
+    viajes_ordenados = sorted(
+        viajes_filtrados, 
+        key=lambda x: (
+            -float(x.get("trip_distance", 0)),  # Orden descendente por trip_distance
+            -float(x.get("total_amount", 0))    # Orden descendente por total_amount
+        )
+    )
+    
+    total = len(viajes_ordenados)  # Obtener el tamaño total
+    
+    # Obtener los primeros N y los últimos N elementos
+    primeros = viajes_ordenados[:n]  # Primeros N elementos (o menos si no hay suficientes)
+    ultimos = viajes_ordenados[-n:]   # Últimos N elementos (o menos si no hay suficientes)
+    
+    fin = time.process_time()  # Obtener el tiempo final
+    tiempo_ms = (fin - inicio) * 1000  # Calcular el tiempo en milisegundos
+    
+    resultado = {
+        "total_trayectos": total,  # Total de trayectos
+        "primeros": primeros,      # Lista de los primeros N
+        "ultimos": ultimos,        # Lista de los últimos N
+        "tiempo_ms": tiempo_ms     # Tiempo de ejecución en ms
+    }
+    
+    return resultado
+
 
 
     
