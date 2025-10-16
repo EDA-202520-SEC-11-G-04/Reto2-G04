@@ -289,12 +289,92 @@ def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
 
 
 
-def req_5(catalog):
+def req_5(catalog, fecha_inicial_str, fecha_final_str):
     """
     Retorna el resultado del requerimiento 5
     """
-    # TODO: Modificar el requerimiento 5
-    pass
+    inicio = time.process_time() 
+    
+    # Convertir fechas
+    try:
+        fecha_inicial = datetime.strptime(fecha_inicial_str, '%Y-%m-%d').date()  
+        fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()  
+    except ValueError:
+        return {"mensaje": "Error en el formato de fechas. Usa 'YYYY-MM-DD'."}  # Manejo de error
+    
+    # Crear el diccionario
+    dias = {i: [[] for _ in range(24)] for i in range(7)}  
+    total_trayectos = 0  
+    
+    for i in range(len(catalog)):
+        viaje = catalog[i]  
+        
+        try:
+            pickup_str = viaje.get("pickup_datetime")  
+            dropoff_str = viaje.get("dropoff_datetime")  
+            pickup = datetime.strptime(pickup_str, '%Y-%m-%d %H:%M:%S') 
+            dropoff = datetime.strptime(dropoff_str, '%Y-%m-%d %H:%M:%S')  
+            fecha = pickup.date()  
+        except (KeyError, ValueError, TypeError):
+            continue  
+        
+        if fecha < fecha_inicial or fecha > fecha_final:
+            continue 
+        
+        duracion_minutos = (dropoff - pickup).total_seconds() / 60  
+        try:
+            costo = float(viaje.get("total_amount", 0)) 
+        except ValueError:
+            costo = 0  
+        
+        dia = pickup.weekday()  
+        hora = pickup.hour  
+        
+        dias[dia][hora].append({"costo": costo, "duracion": duracion_minutos})  # Añadir al diccionario
+        total_trayectos += 1  
+        
+    resultados = []  
+    
+    for dia_num in range(7): 
+        nombre_dia = days_of_week[dia_num]  
+        franjas = []  
+        
+        for hora in range(24):  
+            lista_hora = dias[dia_num][hora]
+            if not lista_hora: 
+                continue
+                
+            costos = [x["costo"] for x in lista_hora]  
+            duraciones = [x["duracion"] for x in lista_hora] 
+            
+            promedio_costo = sum(costos) / len(costos) if costos else 0
+            min_costo = min(costos) if costos else 0
+            max_costo = max(costos) if costos else 0
+            
+            promedio_duracion = sum(duraciones) / len(duraciones) if duraciones else 0
+            min_duracion = min(duraciones) if duraciones else 0
+            max_duracion = max(duraciones) if duraciones else 0
+            
+            franjas.append({
+                "hora": hora,
+                "promedio_costo": promedio_costo,
+                "min_costo": min_costo,
+                "max_costo": max_costo,
+                "promedio_duracion": promedio_duracion,
+                "min_duracion": min_duracion,
+                "max_duracion": max_duracion
+            })
+        if franjas:
+            resultados.append({"dia": nombre_dia, "franjas": franjas})
+            
+    fin = time.process_time()  # Obtener el tiempo final
+    tiempo_ms = (fin - inicio) * 1000  # Calcular tiempo
+    
+    return {
+        "total_trayectos": total_trayectos,
+        "dias": resultados,  
+        "tiempo_ms": tiempo_ms
+    }
 
 def req_6(catalog):
     """
