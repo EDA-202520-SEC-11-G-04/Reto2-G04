@@ -121,10 +121,9 @@ def print_req_3(control):
     pass
 
 
+from tabulate import tabulate
+
 def print_req_4(control):
-    """
-        Función que imprime la solución del Requerimiento 4 en consola
-    """
     fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
     momento = input("Momento ('ANTES' o 'DESPUES'): ").upper()
     tiempo_ref = input("Hora de referencia (HH:MM:SS): ")
@@ -143,21 +142,24 @@ def print_req_4(control):
         print("No hay trayectos para mostrar.")
         return
 
-    # Colonnes qu’on veut afficher
+    # ✅ Colonnes à afficher
     headers = [
-        "pickup_datetime", "pickup_datetime", "pickup_latitude", "dropoff_datetime",
-        "dropoff_longitude", "dropoff_latitude", "trip_distance", "total_amount"
+        "pickup_datetime", "pickup_longitude", "pickup_latitude",
+        "dropoff_datetime", "dropoff_longitude", "dropoff_latitude",
+        "trip_distance", "total_amount"
     ]
 
-    # Convertir les listes pour tabulate
     print("Primeros trayectos:")
     primeros = [t for t in res["primeros"]["elements"]]
-    print(tabulate(primeros, headers="keys", tablefmt="grid", floatfmt=".2f"))
+    primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
+    print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
     if res["ultimos"]:
         print("\nÚltimos trayectos:")
         ultimos = [t for t in res["ultimos"]["elements"]]
-        print(tabulate(ultimos, headers="keys", tablefmt="grid", floatfmt=".2f"))
+        ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
+        print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
 
 
 def print_req_5(control):

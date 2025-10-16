@@ -172,16 +172,7 @@ def req_3(catalog):
     # TODO: Modificar el requerimiento 3
     pass
 
-def sort_criteria_dropoff_desc(t1, t2):
-    """
-    Critère de tri : du plus récent au plus ancien selon dropoff_datetime
-    """
-    try:
-        dt1 = datetime.strptime(t1["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
-        dt2 = datetime.strptime(t2["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
-        return dt1 > dt2   # True si t1 est plus récent → tri décroissant
-    except:
-        return False
+
     
 def sort_criteria_dropoff_desc(t1, t2):
     """
@@ -210,7 +201,6 @@ def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
 
     tabla = mp.new_map(100, 0.5)
 
-    # 🔹 Créer la table avec clé = string 'YYYY-MM-DD'
     for t in catalog["elements"]:
         try:
             drop_dt = datetime.strptime(t["dropoff_datetime"], "%Y-%m-%d %H:%M:%S")
@@ -228,13 +218,7 @@ def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
             list.add_last(trips, t)
             mp.put(tabla, drop_date_str, trips)
 
-    # 🔹 Chercher la date demandée (aussi en string)
     fecha_str = fecha_terminacion.strftime("%Y-%m-%d")
-
-    # DEBUG
-    print("✅ Clés présentes dans la table:", mp.key_set(tabla))
-    print(f"🔎 Date recherchée: {fecha_str} | Type: {type(fecha_str)}")
-
     filtrados = mp.get(tabla, fecha_str)
 
     if not filtrados or list.size(filtrados) == 0:
@@ -247,7 +231,6 @@ def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
             "mensaje": "No se encontraron trayectos en el rango indicado."
         }
 
-    # 🔹 Trier par dropoff_datetime décroissant
     filtrados = list.merge_sort(filtrados, sort_criteria_dropoff_desc)
 
     total = list.size(filtrados)
