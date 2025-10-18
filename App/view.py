@@ -117,11 +117,20 @@ def print_req_3(control):
     """
         Función que imprime la solución del Requerimiento 3 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    distancia_inicial = float(input("Ingrese la distancia mínima (en millas): "))
+    distancia_final = float(input("Ingrese la distancia máxima (en millas): "))
+    N = int(input("Ingrese el número de trayectos a mostrar al inicio y al final: "))
 
+    result = logic.req_3(control, distancia_inicial, distancia_final, N)
 
-from tabulate import tabulate
+    print("\n--- Resultado del Requerimiento 3 ---")
+    print("Total de trayectos:", result["total_trayectos"])
+    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
+    print("\nPrimeros trayectos:")
+    print(result["primeros"])
+    print("\nÚltimos trayectos:")
+    print(result["ultimos"])
+
 
 def print_req_4(control):
     fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
@@ -166,16 +175,42 @@ def print_req_5(control):
     """
         Función que imprime la solución del Requerimiento 5 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 5
-    pass
+    fecha_inicial = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
+    fecha_final = input("Ingrese la fecha final (YYYY-MM-DD): ")
+
+    result = logic.req_5(control, fecha_inicial, fecha_final)
+
+    print("\n--- Resultado del Requerimiento 5 ---")
+    print("Total de trayectos:", result["total_trayectos"])
+    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
+    print("\nResumen por día y franja horaria:")
+    for dia in result["dias"]:
+        print(f"\n{dia['dia']}:")
+        for franja in dia["franjas"]:
+            print(f"  Hora {franja['hora']}: Prom. costo = {franja['promedio_costo']:.2f}, "
+                  f"Prom. duración = {franja['promedio_duracion']:.2f}")
+
 
 
 def print_req_6(control):
     """
         Función que imprime la solución del Requerimiento 6 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 6
-    pass
+    barrio_inicio = input("Ingrese el nombre del barrio de inicio: ")
+    fecha_inicial = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
+    fecha_final = input("Ingrese la fecha final (YYYY-MM-DD): ")
+
+    neighborhoods = logic.cargar_centroides("Data/nyc-neighborhoods.csv")
+
+    result = logic.req_6(control, neighborhoods, barrio_inicio, fecha_inicial, fecha_final)
+
+    print("\n--- Resultado del Requerimiento 6 ---")
+    print("Total de viajes:", result["total_viajes"])
+    print("Barrio destino más visitado:", result["barrio_destino_mas_visitado"])
+    print("Distancia promedio:", result["distancia_promedio"])
+    print("Duración promedio:", result["duracion_promedio"])
+    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
+
 
 # Se crea la lógica asociado a la vista
 control = new_logic()
