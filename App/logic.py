@@ -171,7 +171,7 @@ def req_3(catalog, distancia_inicial, distancia_final, n):
     """
     inicio = time.process_time()  
     
-    viajes_filtrados = []  
+    viajes_filtrados = []
     for i in range(len(catalog)):
         viaje = catalog[i]  # Obtener el elemento actual
         try:
@@ -305,8 +305,8 @@ def req_5(catalog, fecha_inicial_str, fecha_final_str):
     dias = {i: [[] for _ in range(24)] for i in range(7)}  
     total_trayectos = 0  
     
-    for i in range(len(catalog)):
-        viaje = catalog[i]  
+    for i in range(list.size(catalog)):
+        viaje = list.get_element(catalog,i) 
         
         try:
             pickup_str = viaje.get("pickup_datetime")  
