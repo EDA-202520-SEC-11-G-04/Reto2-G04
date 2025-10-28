@@ -195,7 +195,16 @@ def print_req_5(control):
         hora_final_str = f"{int(hora_str):02d}:00:00"
 
         # Obtener trips desde el control (ruta estándar de la plantilla)
-        trips = control["model"]["catalog"]["trips"]
+        # Buscar la lista de viajes en distintas estructuras posibles
+        if "model" in control:
+            trips = control["model"]["catalog"]["trips"]
+        elif "catalog" in control:
+            trips = control["catalog"]["trips"]
+        elif "trips" in control:
+            trips = control["trips"]
+        else:
+            print("Error: no se encontró la lista de viajes en la estructura de control.")
+        
 
         # Llamar al requerimiento
         result = logic.req_5(trips, fecha, hora_final_str, n)
