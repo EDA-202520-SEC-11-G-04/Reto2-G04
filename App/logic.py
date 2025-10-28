@@ -171,6 +171,13 @@ def req_3(catalog, distancia_inicial, distancia_final, n):
     inicio = time.process_time()
 
     viajes_filtrados = list.new_list()
+    
+    if isinstance(catalog, dict):
+       if "trips" in catalog:
+          catalog = catalog["trips"]
+       elif "model" in catalog and "catalog" in catalog["model"]:
+          catalog = catalog["model"]["catalog"]["trips"]
+
 
     lista_viajes = catalog["trips"]
     for i in range(list.size(lista_viajes)):

@@ -121,7 +121,7 @@ def print_req_3(control):
     distancia_final = float(input("Ingrese la distancia máxima (en millas): "))
     N = int(input("Ingrese el número de trayectos a mostrar al inicio y al final: "))
 
-    result = logic.req_3(control["trips"], distancia_inicial, distancia_final, N)
+    result = logic.req_3(control, distancia_inicial, distancia_final, N)
 
     print("\n--- Resultado del Requerimiento 3 ---")
     print("Total de trayectos:", result["total_trayectos"])
@@ -172,44 +172,109 @@ def print_req_4(control):
 
 
 def print_req_5(control):
-    """
-        Función que imprime la solución del Requerimiento 5 en consola
-    """
-    fecha_inicial = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
-    fecha_final = input("Ingrese la fecha final (YYYY-MM-DD): ")
 
-    result = logic.req_5(control, fecha_inicial, fecha_final)
+    print("\n=== Requerimiento 5 ===")
+    try:
+        fecha = input("Ingrese la fecha de terminación (YYYY-MM-DD): ").strip()
+        hora_str = input("Ingrese la hora de terminación (HH, 0-23): ").strip()
+        n = int(input("Ingrese el número de elementos a mostrar (N): "))
 
-    print("\n--- Resultado del Requerimiento 5 ---")
-    print("Total de trayectos:", result["total_trayectos"])
-    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
-    print("\nResumen por día y franja horaria:")
-    for dia in result["dias"]:
-        print(f"\n{dia['dia']}:")
-        for franja in dia["franjas"]:
-            print(f"  Hora {franja['hora']}: Prom. costo = {franja['promedio_costo']:.2f}, "
-                  f"Prom. duración = {franja['promedio_duracion']:.2f}")
+        # Validar fecha
+        try:
+            datetime.strptime(fecha, "%Y-%m-%d")
+        except ValueError:
+            print("Formato de fecha inválido. Use YYYY-MM-DD.")
+            return
+
+        # Validar hora
+        if not hora_str.isdigit() or not (0 <= int(hora_str) <= 23):
+            print("Hora inválida. Ingrese un valor entre 0 y 23.")
+            return
+
+        # Formatear hora a "%H:%M:%S" porque req_5 espera hora_final_str en ese formato
+        hora_final_str = f"{int(hora_str):02d}:00:00"
+
+        # Obtener trips desde el control (ruta estándar de la plantilla)
+        trips = control["model"]["catalog"]["trips"]
+
+        # Llamar al requerimiento
+        result = logic.req_5(trips, fecha, hora_final_str, n)
+
+        if "mensaje" in result:
+            print(result["mensaje"])
+            return
+
+        # Resumen
+        print(f"\nTotal de viajes considerados: {result.get('total_trayectos', 'N/A')}")
+        print(f"Tiempo de ejecución: {result.get('tiempo_ms', 0):.2f} ms\n")
+
+        # Función auxiliar para obtener lista Python desde un objeto 'list' (array_list)
+        def to_py_list(maybe_lt):
+            if maybe_lt is None:
+                return []
+            if isinstance(maybe_lt, dict) and "elements" in maybe_lt:
+                return maybe_lt["elements"]
+            return maybe_lt
+
+        # Mostrar primeros N
+        if "primeros" in result and result["primeros"] is not None:
+            primeros = to_py_list(result["primeros"])
+            if primeros:
+                print("Primeros resultados:")
+                print(tabulate(primeros, headers="keys", tablefmt="grid", floatfmt=".2f"))
+            else:
+                print("No hay primeros resultados para mostrar.")
+        else:
+            print("No hay primeros resultados para mostrar.")
+
+        # Mostrar ultimos N
+        if "ultimos" in result and result["ultimos"] is not None:
+            ultimos = to_py_list(result["ultimos"])
+            if ultimos:
+                print("\nÚltimos resultados:")
+                print(tabulate(ultimos, headers="keys", tablefmt="grid", floatfmt=".2f"))
+            else:
+                print("No hay últimos resultados para mostrar.")
+        else:
+            print("No hay últimos resultados para mostrar.")
+
+    except Exception as e:
+        print("Error al ejecutar el requerimiento 5:", e)
+
+
 
 
 
 def print_req_6(control):
-    """
-        Función que imprime la solución del Requerimiento 6 en consola
-    """
-    barrio_inicio = input("Ingrese el nombre del barrio de inicio: ")
-    fecha_inicial = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
-    fecha_final = input("Ingrese la fecha final (YYYY-MM-DD): ")
+    print("\n=== Requerimiento 6 ===")
+    try:
+        barrio = input("Ingrese el barrio de origen: ")
+        hora_inicial = int(input("Ingrese la hora inicial (0-23): "))
+        hora_final = int(input("Ingrese la hora final (0-23): "))
+        n = int(input("Ingrese el número de elementos a mostrar: "))
 
-    neighborhoods = logic.cargar_centroides("Data/nyc-neighborhoods.csv")
+        result = logic.req_6(control["model"]["catalog"]["trips"], control["model"]["catalog"]["neighborhoods"], barrio, hora_inicial, hora_final, n)
 
-    result = logic.req_6(control, neighborhoods, barrio_inicio, fecha_inicial, fecha_final)
+        if "mensaje" in result:
+            print(result["mensaje"])
+            return
 
-    print("\n--- Resultado del Requerimiento 6 ---")
-    print("Total de viajes:", result["total_viajes"])
-    print("Barrio destino más visitado:", result["barrio_destino_mas_visitado"])
-    print("Distancia promedio:", result["distancia_promedio"])
-    print("Duración promedio:", result["duracion_promedio"])
-    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
+        print(f"\nTotal de viajes: {result['total_viajes']}")
+        print(f"Distancia promedio: {result['distancia_promedio']:.2f} km")
+        print(f"Duración promedio: {result['duracion_promedio']:.2f} minutos")
+        print(f"Barrio destino más visitado: {result['barrio_destino_mas_visitado']}")
+        print(f"Método de pago más usado: {result['metodo_mas_usado']}")
+        print(f"Método de pago con mayor recaudo: {result['metodo_mayor_recaudo']}")
+        print(f"Tiempo de ejecución: {result['tiempo_ms']:.2f} ms")
+
+        # Mostrar tabla con los primeros barrios destino
+        print("\nTop barrios destino:")
+        tabla = result["primeros"]["elements"]
+        print(tabulate(tabla, headers="keys", tablefmt="grid", floatfmt=".2f"))
+
+    except Exception as e:
+        print("Error al ejecutar el requerimiento 6:", e)
+
 
 
 # Se crea la lógica asociado a la vista
