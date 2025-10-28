@@ -166,49 +166,46 @@ def req_2(catalog):
 
 
 def req_3(catalog, distancia_inicial, distancia_final, n):
-    """
-    Retorna el resultado del requerimiento 3
-    """
-    inicio = time.process_time()  
-    
-    viajes_filtrados = []
-    for i in range(len(catalog)):
-        viaje = catalog[i]  # Obtener el elemento actual
+    """Retorna el resultado del requerimiento 3"""
+
+    inicio = time.process_time()
+
+    viajes_filtrados = list.new_list()
+
+    lista_viajes = catalog["trips"]
+    for i in range(list.size(lista_viajes)):
+        viaje = list.get_element(lista_viajes, i)
+
         try:
-            distancia = float(viaje.get("trip_distance", 0))  
+            distancia = float(viaje.get("trip_distance", 0))
         except ValueError:
             continue
-        
+
         if distancia >= distancia_inicial and distancia <= distancia_final:
-            viajes_filtrados.append(viaje)  # Agregar el viaje a la lista filtrada
-    if len(viajes_filtrados) == 0:
+            list.add_last(viajes_filtrados, viaje)
+
+    if list.size(viajes_filtrados) == 0:
         return {"mensaje": "No hay trayectos en ese rango de distancia"}
-    
-    #lamba para el ordenamiento
-    viajes_ordenados = sorted(
-        viajes_filtrados, 
-        key=lambda x: (
-            -float(x.get("trip_distance", 0)),  
-            -float(x.get("total_amount", 0))    
-        )
-    )
-    
-    total = len(viajes_ordenados)  
-    
-    # Obtener los primeros N y los últimos N elementos
-    primeros = viajes_ordenados[:n]  
-    ultimos = viajes_ordenados[-n:]   
-    
-    fin = time.process_time()  
-    tiempo_ms = (fin - inicio) * 1000  
-    
+
+    # Ordenar
+    viajes_ordenados = list.merge_sort(viajes_filtrados, logic2.sort_criteria)
+
+    total = list.size(viajes_ordenados)
+
+    # Obtener los primeros n y los últimos n elementos
+    primeros = list.sub_list(viajes_ordenados, 0, n)
+    ultimos = list.sub_list(viajes_ordenados, max(0, total - n), n)
+
+    fin = time.process_time()
+    tiempo_ms = (fin - inicio) * 1000
+
     resultado = {
-        "total_trayectos": total,  
-        "primeros": primeros,      
-        "ultimos": ultimos,        
-        "tiempo_ms": tiempo_ms     
+        "total_trayectos": total,
+        "primeros": primeros,
+        "ultimos": ultimos,
+        "tiempo_ms": tiempo_ms
     }
-    
+
     return resultado
 
 
@@ -288,194 +285,203 @@ def req_4(catalog, fecha_terminacion_str, momento, tiempo_ref_str, n):
 
 
 
-def req_5(catalog, fecha_inicial_str, fecha_final_str):
-    """
-    Retorna el resultado del requerimiento 5
-    """
-    inicio = time.process_time() 
-    
-    # Convertir fechas
-    try:
-        fecha_inicial = datetime.strptime(fecha_inicial_str, '%Y-%m-%d').date()  
-        fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()  
-    except ValueError:
-        return {"mensaje": "Error en el formato de fechas. Usa 'YYYY-MM-DD'."}  # Manejo de error
-    
-    # Crear el diccionario
-    dias = {i: [[] for _ in range(24)] for i in range(7)}  
-    total_trayectos = 0  
-    
+def req_5(catalog, fecha_str, hora_final_str, n):
+    """Retorna el resultado del requerimiento 5"""
+    inicio = time.process_time()
+
+    mapa_horas = mp.new_map(50, 0.7)  
+
+    total_trayectos = 0
+    fecha_limite = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+    hora_limite = datetime.strptime(hora_final_str, "%H:%M:%S").time()
+
     for i in range(list.size(catalog)):
-        viaje = list.get_element(catalog,i) 
-        
+        viaje = list.get_element(catalog, i)
         try:
-            pickup_str = viaje.get("pickup_datetime")  
-            dropoff_str = viaje.get("dropoff_datetime")  
-            pickup = datetime.strptime(pickup_str, '%Y-%m-%d %H:%M:%S') 
-            dropoff = datetime.strptime(dropoff_str, '%Y-%m-%d %H:%M:%S')  
-            fecha = pickup.date()  
-        except (KeyError, ValueError, TypeError):
-            continue  
-        
-        if fecha < fecha_inicial or fecha > fecha_final:
-            continue 
-        
-        duracion_minutos = (dropoff - pickup).total_seconds() / 60  
-        try:
-            costo = float(viaje.get("total_amount", 0)) 
-        except ValueError:
-            costo = 0  
-        
-        dia = pickup.weekday()  
-        hora = pickup.hour  
-        
-        dias[dia][hora].append({"costo": costo, "duracion": duracion_minutos})  # Añadir al diccionario
-        total_trayectos += 1  
-        
-    resultados = []  
-    
-    for dia_num in range(7): 
-        nombre_dia = logic2.days_of_week[dia_num]  
-        franjas = []  
-        
-        for hora in range(24):  
-            lista_hora = dias[dia_num][hora]
-            if not lista_hora: 
-                continue
-                
-            costos = [x["costo"] for x in lista_hora]  
-            duraciones = [x["duracion"] for x in lista_hora] 
-            
-            promedio_costo = sum(costos) / len(costos) if costos else 0
-            min_costo = min(costos) if costos else 0
-            max_costo = max(costos) if costos else 0
-            
-            promedio_duracion = sum(duraciones) / len(duraciones) if duraciones else 0
-            min_duracion = min(duraciones) if duraciones else 0
-            max_duracion = max(duraciones) if duraciones else 0
-            
-            franjas.append({
-                "hora": hora,
-                "promedio_costo": promedio_costo,
-                "min_costo": min_costo,
-                "max_costo": max_costo,
-                "promedio_duracion": promedio_duracion,
-                "min_duracion": min_duracion,
-                "max_duracion": max_duracion
-            })
-        if franjas:
-            resultados.append({"dia": nombre_dia, "franjas": franjas})
-            
-    fin = time.process_time()  # Obtener el tiempo final
-    tiempo_ms = (fin - inicio) * 1000  # Calcular tiempo
-    
+            dropoff = datetime.strptime(viaje.get("dropoff_datetime"), "%Y-%m-%d %H:%M:%S")
+            costo = float(viaje.get("total_amount", 0))
+            pickup = datetime.strptime(viaje.get("pickup_datetime"), "%Y-%m-%d %H:%M:%S")
+            duracion = (dropoff - pickup).total_seconds() / 60 
+        except (ValueError, TypeError):
+            continue
+
+        # Filtrar fecha y hora
+        if dropoff.date() == fecha_limite and dropoff.time() <= hora_limite:
+            hora = str(dropoff.hour).zfill(2) 
+
+            if not mp.contains(mapa_horas, hora):
+                mp.put(mapa_horas, hora, list.new_list())
+
+            # Agregar viajes
+            lista_hora = mp.get(mapa_horas, hora)
+            list.add_last(lista_hora, {"costo": costo, "duracion": duracion})
+            mp.put(mapa_horas, hora, lista_hora)
+            total_trayectos += 1
+
+    if total_trayectos == 0:
+        return {"mensaje": "No se encontraron trayectos con esa fecha y hora límite."}
+
+    resultados = list.new_list()
+    llaves = mp.key_set(mapa_horas)
+
+    for i in range(list.size(llaves)):
+        hora = list.get_element(llaves, i)
+        lista = mp.get(mapa_horas, hora)
+
+        costos = [viaje["costo"] for viaje in lista["elements"]]
+        duraciones = [viaje["duracion"] for viaje in lista["elements"]]
+
+        promedio_costo = sum(costos) / len(costos)
+        min_costo = min(costos)
+        max_costo = max(costos)
+
+        promedio_duracion = sum(duraciones) / len(duraciones)
+        min_duracion = min(duraciones)
+        max_duracion = max(duraciones)
+
+        list.add_last(resultados, {
+            "hora": hora,
+            "promedio_costo": promedio_costo,
+            "min_costo": min_costo,
+            "max_costo": max_costo,
+            "promedio_duracion": promedio_duracion,
+            "min_duracion": min_duracion,
+            "max_duracion": max_duracion
+        })
+
+
+
+    resultados_ordenados = list.merge_sort(resultados, logic2.sort_horas)
+    total_horas = list.size(resultados_ordenados)
+
+    # Primeras y últimas n horas
+    primeros = list.sub_list(resultados_ordenados, 0, n)
+    ultimos = list.sub_list(resultados_ordenados, max(0, total_horas - n), n)
+
+    fin = time.process_time()
+    tiempo_ms = (fin - inicio) * 1000
+
     return {
         "total_trayectos": total_trayectos,
-        "dias": resultados,  
+        "primeros": primeros,
+        "ultimos": ultimos,
         "tiempo_ms": tiempo_ms
     }
 
-def req_6(catalog, neighborhoods, barrio_inicio, fecha_inicial_str, fecha_final_str):
-    """
-    Retorna el resultado del requerimiento 6
-    """
+def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
+    """Retorna el resultado del requerimiento 4"""
 
-    inicio = time.time()
+    inicio = time.process_time()
 
-    fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, '%Y-%m-%d').date()
-    fecha_final = datetime.datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
+    total_viajes = 0
+    total_distancia = 0
+    total_duracion = 0
 
-    viajes_filtrados = []
-    total_distancia = 0.0
-    total_duracion = 0.0
+    mapa_destinos = mp.new_map(100, 0.7)
+    mapa_metodos = mp.new_map(10, 0.7)
 
-    for viaje in catalog:
-        pickup = datetime.datetime.fromisoformat(viaje["pickup_datetime"])
-        dropoff = datetime.datetime.fromisoformat(viaje["dropoff_datetime"])
-        fecha = pickup.date()
-
-        if fecha < fecha_inicial or fecha > fecha_final:
+    for i in range(list.size(catalog)):
+        viaje = list.get_element(catalog, i)
+        try:
+            pickup = datetime.strptime(viaje.get("pickup_datetime"), "%Y-%m-%d %H:%M:%S")
+            dropoff = datetime.strptime(viaje.get("dropoff_datetime"), "%Y-%m-%d %H:%M:%S")
+            distancia = float(viaje.get("trip_distance", 0))
+            metodo = viaje.get("payment_type", "Desconocido")
+        except (ValueError, TypeError):
             continue
 
-        origen = logic2.encontrar_barrio(float(viaje["pickup_latitude"]), float(viaje["pickup_longitude"]), neighborhoods)
+        # Filtro por rango de hora
+        if hora_inicial <= pickup.hour <= hora_final:
+            barrio_origen = logic2.encontrar_barrio(
+                float(viaje.get("pickup_latitude", 0)),
+                float(viaje.get("pickup_longitude", 0)),
+                neighborhoods
+            )
+            barrio_destino = logic2.encontrar_barrio(
+                float(viaje.get("dropoff_latitude", 0)),
+                float(viaje.get("dropoff_longitude", 0)),
+                neighborhoods
+            )
 
-        if origen != barrio_inicio:
-            continue
+            if barrio_origen == barrio_inicial:
+                duracion = (dropoff - pickup).total_seconds() / 60
 
-        viajes_filtrados.append(viaje)
+                total_viajes += 1
+                total_distancia += distancia
+                total_duracion += duracion
 
-        total_distancia += float(viaje["trip_distance"])
-        total_duracion += (dropoff - pickup).total_seconds() / 60
+                if not mp.contains(mapa_destinos, barrio_destino):
+                    mp.put(mapa_destinos, barrio_destino, 1)
+                else:
+                    valor = mp.get(mapa_destinos, barrio_destino)
+                    mp.put(mapa_destinos, barrio_destino, valor + 1)
 
-    total_viajes = len(viajes_filtrados)
+                if not mp.contains(mapa_metodos, metodo):
+                    mp.put(mapa_metodos, metodo, {"cantidad": 1, "recaudo": float(viaje.get("total_amount", 0))})
+                else:
+                    info = mp.get(mapa_metodos, metodo)
+                    info["cantidad"] += 1
+                    info["recaudo"] += float(viaje.get("total_amount", 0))
+                    mp.put(mapa_metodos, metodo, info)
 
     if total_viajes == 0:
-        return {"mensaje": "No se encontraron trayectos para ese barrio y rango de fechas"}
+        return {"mensaje": "No se encontraron trayectos en ese rango de horas para el barrio indicado."}
 
     distancia_promedio = total_distancia / total_viajes
     duracion_promedio = total_duracion / total_viajes
 
-    # Agrupar por barrio destino
-    destinos = {}
-    for viaje in viajes_filtrados:
-        destino = logic2.encontrar_barrio(float(viaje["dropoff_latitude"]), float(viaje["dropoff_longitude"]), neighborhoods)
-        if destino not in destinos:
-            destinos[destino] = 0
-        destinos[destino] += 1
+    destinos = mp.key_set(mapa_destinos)
+    barrio_mas_visitado = None
+    max_viajes = 0
 
-    barrio_destino_mas_visitado = max(destinos, key=destinos.get)
+    for i in range(list.size(destinos)):
+        barrio = list.get_element(destinos, i)
+        cantidad = mp.get(mapa_destinos, barrio)
+        if cantidad > max_viajes:
+           max_viajes = cantidad
+           barrio_mas_visitado = barrio
 
-    # Agrupar por método de pago
-    metodos = {}
-    for viaje in viajes_filtrados:
-        metodo = viaje["payment_type"]
-        costo = float(viaje["total_amount"])
-        pickup = datetime.datetime.fromisoformat(viaje["pickup_datetime"])
-        dropoff = datetime.datetime.fromisoformat(viaje["dropoff_datetime"])
-        duracion = (dropoff - pickup).total_seconds() / 60
+    metodos = mp.key_set(mapa_metodos)
+    metodo_mas_usado = None
+    metodo_mayor_recaudo = None
+    max_uso = 0
+    max_recaudo = 0
 
-        if metodo not in metodos:
-            metodos[metodo] = {"cantidad": 0, "total_pago": 0.0, "total_duracion": 0.0}
+    for i in range(list.size(metodos)):
+        metodo = list.get_element(metodos, i)
+        info = mp.get(mapa_metodos, metodo)
+        if info["cantidad"] > max_uso:
+            max_uso = info["cantidad"]
+            metodo_mas_usado = metodo
+        if info["recaudo"] > max_recaudo:
+            max_recaudo = info["recaudo"]
+            metodo_mayor_recaudo = metodo
 
-        metodos[metodo]["cantidad"] += 1
-        metodos[metodo]["total_pago"] += costo
-        metodos[metodo]["total_duracion"] += duracion
+    lista_destinos = list.new_list()
+    for i in range(list.size(destinos)):
+        barrio = list.get_element(destinos, i)
+        cantidad = mp.get(mapa_destinos, barrio)
+        list.add_last(lista_destinos, {"barrio_destino": barrio, "cantidad": cantidad})
 
-    # Calcular estadísticas por método
-    lista_metodos = []
-    for metodo, data in metodos.items():
-        cantidad = data["cantidad"]
-        promedio_pago = data["total_pago"] / cantidad
-        promedio_duracion = data["total_duracion"] / cantidad
-        lista_metodos.append({
-            "metodo": metodo,
-            "cantidad_trayectos": cantidad,
-            "promedio_pago": promedio_pago,
-            "duracion_promedio": promedio_duracion
-        })
+    def sort_destinos(d1, d2):
+        return d1["cantidad"] > d2["cantidad"]
 
-    # Encontrar mas_usado (método con mayor cantidad_trayectos)
-    mas_usado = max(lista_metodos, key=lambda x: x["cantidad_trayectos"])["metodo"]
+    destinos_ordenados = list.merge_sort(lista_destinos, sort_destinos)
+    primeros = list.sub_list(destinos_ordenados, 0, n)
 
-    # Encontrar mas_recaudo (método con mayor total_pago, ya que cantidad * promedio_pago = total_pago)
-    mas_recaudo = max(metodos, key=lambda m: metodos[m]["total_pago"])
-
-    for metodo in lista_metodos:
-        metodo["es_mas_usado"] = (metodo["metodo"] == mas_usado)
-        metodo["es_mas_recaudo"] = (metodo["metodo"] == mas_recaudo)
-
-    fin = time.time()
+    fin = time.process_time()
     tiempo_ms = (fin - inicio) * 1000
 
     return {
         "total_viajes": total_viajes,
         "distancia_promedio": distancia_promedio,
         "duracion_promedio": duracion_promedio,
-        "barrio_destino_mas_visitado": barrio_destino_mas_visitado,
-        "metodos_pago": lista_metodos,
+        "barrio_destino_mas_visitado": barrio_mas_visitado,
+        "metodo_mas_usado": metodo_mas_usado,
+        "metodo_mayor_recaudo": metodo_mayor_recaudo,
+        "primeros": primeros,
         "tiempo_ms": tiempo_ms
     }
-
 
 # Funciones para medir tiempos de ejecucion
 

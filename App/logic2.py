@@ -51,3 +51,16 @@ def days_of_week(weekday_num):
     }
 
     return dias.get(weekday_num, "Desconocido")
+
+def sort_criteria(viaje1, viaje2):
+        d1 = float(viaje1.get("trip_distance", 0))
+        d2 = float(viaje2.get("trip_distance", 0))
+        if d1 > d2:
+            return True
+        elif d1 == d2:
+            return float(viaje1.get("total_amount", 0)) > float(viaje2.get("total_amount", 0))
+        else:
+            return False
+        
+def sort_horas(r1, r2):
+    return int(r1["hora"]) < int(r2["hora"])

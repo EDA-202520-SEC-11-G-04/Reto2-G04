@@ -121,7 +121,7 @@ def print_req_3(control):
     distancia_final = float(input("Ingrese la distancia máxima (en millas): "))
     N = int(input("Ingrese el número de trayectos a mostrar al inicio y al final: "))
 
-    result = logic.req_3(control, distancia_inicial, distancia_final, N)
+    result = logic.req_3(control["trips"], distancia_inicial, distancia_final, N)
 
     print("\n--- Resultado del Requerimiento 3 ---")
     print("Total de trayectos:", result["total_trayectos"])
