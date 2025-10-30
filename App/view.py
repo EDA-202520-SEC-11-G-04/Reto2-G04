@@ -172,30 +172,16 @@ def print_req_4(control):
 
 
 def print_req_5(control):
+    # Solicitar parámetros al usuario
+    fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
+    hora_terminacion = input("Hora de terminación (HH, 0-23): ")
+    n = int(input("Número de horas a mostrar (N primeras y N últimas): "))
 
-    print("\n=== Requerimiento 5 ===")
-    try:
-        fecha = input("Ingrese la fecha de terminación (YYYY-MM-DD): ").strip()
-        hora_str = input("Ingrese la hora de terminación (HH, 0-23): ").strip()
-        n = int(input("Ingrese el número de elementos a mostrar (N): "))
+    # Convertir hora al formato requerido por req_5
+    hora_formateada = f"{int(hora_terminacion):02d}:00:00"
 
-        # Validar fecha
-        try:
-            datetime.strptime(fecha, "%Y-%m-%d")
-        except ValueError:
-            print("Formato de fecha inválido. Use YYYY-MM-DD.")
-            return
-
-        # Validar hora
-        if not hora_str.isdigit() or not (0 <= int(hora_str) <= 23):
-            print("Hora inválida. Ingrese un valor entre 0 y 23.")
-            return
-
-        # Formatear hora a "%H:%M:%S" porque req_5 espera hora_final_str en ese formato
-        hora_final_str = f"{int(hora_str):02d}:00:00"
-
-        # Obtener trips desde el control (ruta estándar de la plantilla)
-        # Buscar la lista de viajes en distintas estructuras posibles
+    # Detectar dónde está la lista de viajes dentro del control
+    if isinstance(control, dict):
         if "model" in control:
             trips = control["model"]["catalog"]["trips"]
         elif "catalog" in control:
@@ -204,52 +190,28 @@ def print_req_5(control):
             trips = control["trips"]
         else:
             print("Error: no se encontró la lista de viajes en la estructura de control.")
-        
-
-        # Llamar al requerimiento
-        result = logic.req_5(trips, fecha, hora_final_str, n)
-
-        if "mensaje" in result:
-            print(result["mensaje"])
             return
+    else:
+        # Si no es un diccionario, probablemente ya es la lista de viajes
+        trips = control
 
-        # Resumen
-        print(f"\nTotal de viajes considerados: {result.get('total_trayectos', 'N/A')}")
-        print(f"Tiempo de ejecución: {result.get('tiempo_ms', 0):.2f} ms\n")
+    # Llamar al requerimiento 5 con la lista de viajes
+    res = logic.req_5(trips, fecha_terminacion, hora_formateada, n)
 
-        # Función auxiliar para obtener lista Python desde un objeto 'list' (array_list)
-        def to_py_list(maybe_lt):
-            if maybe_lt is None:
-                return []
-            if isinstance(maybe_lt, dict) and "elements" in maybe_lt:
-                return maybe_lt["elements"]
-            return maybe_lt
+    # Mostrar resultados generales
+    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
-        # Mostrar primeros N
-        if "primeros" in result and result["primeros"] is not None:
-            primeros = to_py_list(result["primeros"])
-            if primeros:
-                print("Primeros resultados:")
-                print(tabulate(primeros, headers="keys", tablefmt="grid", floatfmt=".2f"))
-            else:
-                print("No hay primeros resultados para mostrar.")
-        else:
-            print("No hay primeros resultados para mostrar.")
+    # Si no hay resultados o mensaje de error
+    if "mensaje" in res:
+        print(res["mensaje"])
+        return
 
-        # Mostrar ultimos N
-        if "ultimos" in result and result["ultimos"] is not None:
-            ultimos = to_py_list(result["ultimos"])
-            if ultimos:
-                print("\nÚltimos resultados:")
-                print(tabulate(ultimos, headers="keys", tablefmt="grid", floatfmt=".2f"))
-            else:
-                print("No hay últimos resultados para mostrar.")
-        else:
-            print("No hay últimos resultados para mostrar.")
+    if not res["primeros"]:
+        print("No hay resultados para mostrar.")
+        return
 
-    except Exception as e:
-        print("Error al ejecutar el requerimiento 5:", e)
-
+    # Encabezados de columnas según los datos de req_5
 
 
 
