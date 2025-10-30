@@ -237,9 +237,9 @@ def print_req_5(control):
         print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
 
-
-
 def print_req_6(control):
+    """Imprime los resultados del requerimiento 6"""
+
     hora_inicial = input("Hora inicial (HH, 0-23): ")
     hora_final = input("Hora final (HH, 0-23): ")
     barrio = input("Barrio de inicio: ").strip()
@@ -250,36 +250,38 @@ def print_req_6(control):
 
     trips = control 
 
-    # Ejecutar
-    res = logic.req_6(trips, hora_inicial_str, hora_final_str, barrio, n)
-
-    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
-    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
+    try:
+        res = logic.req_6(trips, hora_inicial_str, hora_final_str, barrio, n)
+    except Exception as e:
+        print(f"Error al ejecutar el requerimiento 6: {e}")
+        return
 
     if "mensaje" in res:
         print(res["mensaje"])
         return
-    if not res["primeros"]:
-        print("No hay trayectos para mostrar.")
+
+    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
+
+
+    print(f"Barrio de inicio: {barrio}")
+    print(f"Barrio destino más visitado: {res['barrio_destino_mas_visitado']}")
+    print(f"Distancia promedio: {res['distancia_promedio']:.2f} millas")
+    print(f"Duración promedio: {res['duracion_promedio']:.2f} minutos")
+    print(f"Método de pago más usado: {res['metodo_mas_usado']}")
+    print(f"Método con mayor recaudo: {res['metodo_mayor_recaudo']}\n")
+
+
+    print("Destinos más visitados:")
+    destinos = [t for t in res["primeros"]["elements"]]
+    if not destinos:
+        print("No hay destinos para mostrar.")
         return
 
-    headers = [
-        "pickup_datetime", "dropoff_datetime", "trip_distance",
-        "total_amount", "pickup_barrio", "dropoff_barrio"
-    ]
+    headers = ["barrio_destino", "cantidad"]
+    destinos_tab = [[t.get(h, "") for h in headers] for t in destinos]
+    print(tabulate(destinos_tab, headers=headers, tablefmt="grid", floatfmt=".0f"))
 
-    # Primeros trayectos
-    print("Primeros trayectos:")
-    primeros = [t for t in res["primeros"]["elements"]]
-    primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
-    print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
-
-    # Últimos trayectos
-    if res["ultimos"]:
-        print("\nÚltimos trayectos:")
-        ultimos = [t for t in res["ultimos"]["elements"]]
-        ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
-        print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
 
 
