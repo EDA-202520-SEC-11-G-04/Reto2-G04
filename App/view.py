@@ -253,51 +253,45 @@ def print_req_6(control):
     barrio = input("Barrio de inicio: ").strip()
     n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-    # Convertir las horas al formato esperado por req_6 ("%H:%M:%S")
+    # Formatear horas
     hora_inicial_str = f"{int(hora_inicial):02d}:00:00"
     hora_final_str = f"{int(hora_final):02d}:00:00"
 
-    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
-    trips = control
+    trips = control  # control ya es la lista lt
 
-    # Llamar al requerimiento 6
+    # Ejecutar requerimiento
     res = logic.req_6(trips, hora_inicial_str, hora_final_str, barrio, n)
 
     # Mostrar resultados generales
     print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
     print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
-    # Si hay mensaje o no hay resultados
     if "mensaje" in res:
         print(res["mensaje"])
         return
-
     if not res["primeros"]:
         print("No hay trayectos para mostrar.")
         return
 
-    # Encabezados de columnas (ajusta si tu req_6 devuelve otras claves)
+    # Columnas a mostrar (ajusta si tu req_6 devuelve otras claves)
     headers = [
-        "pickup_datetime",
-        "dropoff_datetime",
-        "trip_distance",
-        "total_amount",
-        "pickup_barrio",
-        "dropoff_barrio"
+        "pickup_datetime", "dropoff_datetime", "trip_distance",
+        "total_amount", "pickup_barrio", "dropoff_barrio"
     ]
 
-    # Mostrar primeros trayectos
+    # Primeros trayectos
     print("Primeros trayectos:")
     primeros = [t for t in res["primeros"]["elements"]]
     primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
     print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
-    # Mostrar últimos trayectos
+    # Últimos trayectos
     if res["ultimos"]:
         print("\nÚltimos trayectos:")
         ultimos = [t for t in res["ultimos"]["elements"]]
         ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
         print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
 
 
 
