@@ -375,8 +375,8 @@ def req_5(catalog, fecha_str, hora_final_str, n):
         "tiempo_ms": tiempo_ms
     }
 
-def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
-    """Retorna el resultado del requerimiento 4"""
+def req_6(catalog, hora_inicial, hora_final, barrio_inicial, n):
+    """Retorna el resultado del requerimiento 6 (viajes por rango de hora y barrio)."""
 
     inicio = time.process_time()
 
@@ -394,42 +394,33 @@ def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
             dropoff = datetime.strptime(viaje.get("dropoff_datetime"), "%Y-%m-%d %H:%M:%S")
             distancia = float(viaje.get("trip_distance", 0))
             metodo = viaje.get("payment_type", "Desconocido")
-        except (ValueError, TypeError):
+            barrio_origen = viaje.get("pickup_barrio", "").strip()
+            barrio_destino = viaje.get("dropoff_barrio", "").strip()
+        except (ValueError, TypeError, AttributeError):
             continue
 
         # Filtro por rango de hora
-        if hora_inicial <= pickup.hour <= hora_final:
-            barrio_origen = logic2.encontrar_barrio(
-                float(viaje.get("pickup_latitude", 0)),
-                float(viaje.get("pickup_longitude", 0)),
-                neighborhoods
-            )
-            barrio_destino = logic2.encontrar_barrio(
-                float(viaje.get("dropoff_latitude", 0)),
-                float(viaje.get("dropoff_longitude", 0)),
-                neighborhoods
-            )
+        if hora_inicial <= pickup.hour <= hora_final and barrio_origen == barrio_inicial:
+            duracion = (dropoff - pickup).total_seconds() / 60
+            total_viajes += 1
+            total_distancia += distancia
+            total_duracion += duracion
 
-            if barrio_origen == barrio_inicial:
-                duracion = (dropoff - pickup).total_seconds() / 60
+            # Contar destinos
+            if not mp.contains(mapa_destinos, barrio_destino):
+                mp.put(mapa_destinos, barrio_destino, 1)
+            else:
+                valor = mp.get(mapa_destinos, barrio_destino)
+                mp.put(mapa_destinos, barrio_destino, valor + 1)
 
-                total_viajes += 1
-                total_distancia += distancia
-                total_duracion += duracion
-
-                if not mp.contains(mapa_destinos, barrio_destino):
-                    mp.put(mapa_destinos, barrio_destino, 1)
-                else:
-                    valor = mp.get(mapa_destinos, barrio_destino)
-                    mp.put(mapa_destinos, barrio_destino, valor + 1)
-
-                if not mp.contains(mapa_metodos, metodo):
-                    mp.put(mapa_metodos, metodo, {"cantidad": 1, "recaudo": float(viaje.get("total_amount", 0))})
-                else:
-                    info = mp.get(mapa_metodos, metodo)
-                    info["cantidad"] += 1
-                    info["recaudo"] += float(viaje.get("total_amount", 0))
-                    mp.put(mapa_metodos, metodo, info)
+            # Contar métodos de pago
+            if not mp.contains(mapa_metodos, metodo):
+                mp.put(mapa_metodos, metodo, {"cantidad": 1, "recaudo": float(viaje.get("total_amount", 0))})
+            else:
+                info = mp.get(mapa_metodos, metodo)
+                info["cantidad"] += 1
+                info["recaudo"] += float(viaje.get("total_amount", 0))
+                mp.put(mapa_metodos, metodo, info)
 
     if total_viajes == 0:
         return {"mensaje": "No se encontraron trayectos en ese rango de horas para el barrio indicado."}
@@ -437,6 +428,7 @@ def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
     distancia_promedio = total_distancia / total_viajes
     duracion_promedio = total_duracion / total_viajes
 
+    # Calcular el barrio más visitado
     destinos = mp.key_set(mapa_destinos)
     barrio_mas_visitado = None
     max_viajes = 0
@@ -445,9 +437,10 @@ def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
         barrio = list.get_element(destinos, i)
         cantidad = mp.get(mapa_destinos, barrio)
         if cantidad > max_viajes:
-           max_viajes = cantidad
-           barrio_mas_visitado = barrio
+            max_viajes = cantidad
+            barrio_mas_visitado = barrio
 
+    # Métodos de pago más usados y de mayor recaudo
     metodos = mp.key_set(mapa_metodos)
     metodo_mas_usado = None
     metodo_mayor_recaudo = None
@@ -464,6 +457,7 @@ def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
             max_recaudo = info["recaudo"]
             metodo_mayor_recaudo = metodo
 
+    # Lista de destinos más frecuentes
     lista_destinos = list.new_list()
     for i in range(list.size(destinos)):
         barrio = list.get_element(destinos, i)
@@ -489,6 +483,7 @@ def req_6(catalog, neighborhoods, barrio_inicial, hora_inicial, hora_final, n):
         "primeros": primeros,
         "tiempo_ms": tiempo_ms
     }
+
 
 # Funciones para medir tiempos de ejecucion
 
