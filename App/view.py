@@ -172,16 +172,6 @@ def print_req_4(control):
 
 
 def print_req_5(control):
-        print("\n--- Diagnóstico estructura de control ---")
-        print("Tipo de objeto:", type(control))
-        if isinstance(control, dict):
-            print("Claves disponibles:", list(control.keys()))
-            for k, v in control.items():
-                print(f"  > {k}: {type(v)}")
-        else:
-            print("El control no es un diccionario, es:", type(control))
-        print("-----------------------------------------\n")
-"""""
     # Solicitar parámetros al usuario
     fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
     hora_terminacion = input("Hora de terminación (HH, 0-23): ")
@@ -190,20 +180,8 @@ def print_req_5(control):
     # Convertir hora al formato requerido por req_5
     hora_formateada = f"{int(hora_terminacion):02d}:00:00"
 
-    # Detectar dónde está la lista de viajes dentro del control
-    if isinstance(control, dict):
-        if "model" in control:
-            trips = control["model"]["catalog"]["trips"]
-        elif "catalog" in control:
-            trips = control["catalog"]["trips"]
-        elif "trips" in control:
-            trips = control["trips"]
-        else:
-            print("Error: no se encontró la lista de viajes en la estructura de control.")
-            return
-    else:
-        # Si no es un diccionario, probablemente ya es la lista de viajes
-        trips = control
+    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
+    trips = control
 
     # Llamar al requerimiento 5 con la lista de viajes
     res = logic.req_5(trips, fecha_terminacion, hora_formateada, n)
@@ -222,7 +200,29 @@ def print_req_5(control):
         return
 
     # Encabezados de columnas según los datos de req_5
-"""
+    headers = [
+        "hora",
+        "promedio_costo",
+        "min_costo",
+        "max_costo",
+        "promedio_duracion",
+        "min_duracion",
+        "max_duracion"
+    ]
+
+    # Mostrar primeras horas
+    print("Primeras horas:")
+    primeros = [t for t in res["primeros"]["elements"]]
+    primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
+    print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
+    # Mostrar últimas horas
+    if res["ultimos"]:
+        print("\nÚltimas horas:")
+        ultimos = [t for t in res["ultimos"]["elements"]]
+        ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
+        print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
 
 
 
