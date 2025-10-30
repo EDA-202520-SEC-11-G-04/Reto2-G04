@@ -179,7 +179,7 @@ def req_3(catalog, distancia_inicial, distancia_final, n):
           catalog = catalog["model"]["catalog"]["trips"]
 
 
-    lista_viajes = catalog["trips"]
+    lista_viajes = catalog
     for i in range(list.size(lista_viajes)):
         viaje = list.get_element(lista_viajes, i)
 
