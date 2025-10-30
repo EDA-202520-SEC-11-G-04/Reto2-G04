@@ -114,22 +114,17 @@ def print_req_2(control):
 
 
 def print_req_3(control):
-    # Solicitar parámetros al usuario
     distancia_inicial = float(input("Distancia mínima (millas): "))
     distancia_final = float(input("Distancia máxima (millas): "))
     n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
-    trips = control
+    trips = control  # tu control ya es la lista lt
 
-    # Llamar al requerimiento 3
     res = logic.req_3(trips, distancia_inicial, distancia_final, n)
 
-    # Mostrar resultados generales
     print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
-    print(f"Total de trayectos encontrados: {res['total_viajes']}\n")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
-    # Si hay mensaje o no hay resultados
     if "mensaje" in res:
         print(res["mensaje"])
         return
@@ -138,25 +133,17 @@ def print_req_3(control):
         print("No hay trayectos para mostrar.")
         return
 
-    # Encabezados de columnas (según lo que devuelve req_3)
     headers = [
-        "pickup_datetime",
-        "dropoff_datetime",
-        "trip_distance",
-        "total_amount",
-        "pickup_longitude",
-        "pickup_latitude",
-        "dropoff_longitude",
-        "dropoff_latitude"
+        "pickup_datetime", "dropoff_datetime", "trip_distance",
+        "total_amount", "pickup_longitude", "pickup_latitude",
+        "dropoff_longitude", "dropoff_latitude"
     ]
 
-    # Mostrar primeros trayectos
     print("Primeros trayectos:")
     primeros = [t for t in res["primeros"]["elements"]]
     primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
     print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
-    # Mostrar últimos trayectos
     if res["ultimos"]:
         print("\nÚltimos trayectos:")
         ultimos = [t for t in res["ultimos"]["elements"]]
