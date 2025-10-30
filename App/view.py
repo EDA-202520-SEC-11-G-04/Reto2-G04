@@ -172,6 +172,16 @@ def print_req_4(control):
 
 
 def print_req_5(control):
+        print("\n--- Diagnóstico estructura de control ---")
+        print("Tipo de objeto:", type(control))
+        if isinstance(control, dict):
+            print("Claves disponibles:", list(control.keys()))
+            for k, v in control.items():
+                print(f"  > {k}: {type(v)}")
+        else:
+            print("El control no es un diccionario, es:", type(control))
+        print("-----------------------------------------\n")
+"""""
     # Solicitar parámetros al usuario
     fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
     hora_terminacion = input("Hora de terminación (HH, 0-23): ")
@@ -212,7 +222,7 @@ def print_req_5(control):
         return
 
     # Encabezados de columnas según los datos de req_5
-
+"""
 
 
 
