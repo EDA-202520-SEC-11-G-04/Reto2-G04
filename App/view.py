@@ -118,7 +118,7 @@ def print_req_3(control):
     distancia_final = float(input("Distancia máxima (millas): "))
     n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-    trips = control  # tu control ya es la lista lt
+    trips = control
 
     res = logic.req_3(trips, distancia_inicial, distancia_final, n)
 
@@ -192,25 +192,19 @@ def print_req_4(control):
 
 
 def print_req_5(control):
-    # Solicitar parámetros al usuario
     fecha_terminacion = input("Fecha de terminación (YYYY-MM-DD): ")
     hora_terminacion = input("Hora de terminación (HH, 0-23): ")
     n = int(input("Número de horas a mostrar (N primeras y N últimas): "))
 
-    # Convertir hora al formato requerido por req_5
     hora_formateada = f"{int(hora_terminacion):02d}:00:00"
 
-    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
     trips = control
 
-    # Llamar al requerimiento 5 con la lista de viajes
     res = logic.req_5(trips, fecha_terminacion, hora_formateada, n)
 
-    # Mostrar resultados generales
     print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
     print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
-    # Si no hay resultados o mensaje de error
     if "mensaje" in res:
         print(res["mensaje"])
         return
@@ -219,7 +213,6 @@ def print_req_5(control):
         print("No hay resultados para mostrar.")
         return
 
-    # Encabezados de columnas según los datos de req_5
     headers = [
         "hora",
         "promedio_costo",
@@ -230,13 +223,13 @@ def print_req_5(control):
         "max_duracion"
     ]
 
-    # Mostrar primeras horas
+    # Primeras horas
     print("Primeras horas:")
     primeros = [t for t in res["primeros"]["elements"]]
     primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
     print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
 
-    # Mostrar últimas horas
+    # Ultimas horas
     if res["ultimos"]:
         print("\nÚltimas horas:")
         ultimos = [t for t in res["ultimos"]["elements"]]
@@ -247,22 +240,19 @@ def print_req_5(control):
 
 
 def print_req_6(control):
-    # Solicitar parámetros al usuario
     hora_inicial = input("Hora inicial (HH, 0-23): ")
     hora_final = input("Hora final (HH, 0-23): ")
     barrio = input("Barrio de inicio: ").strip()
     n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-    # Formatear horas
     hora_inicial_str = f"{int(hora_inicial):02d}:00:00"
     hora_final_str = f"{int(hora_final):02d}:00:00"
 
-    trips = control  # control ya es la lista lt
+    trips = control 
 
-    # Ejecutar requerimiento
+    # Ejecutar
     res = logic.req_6(trips, hora_inicial_str, hora_final_str, barrio, n)
 
-    # Mostrar resultados generales
     print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
     print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
@@ -273,7 +263,6 @@ def print_req_6(control):
         print("No hay trayectos para mostrar.")
         return
 
-    # Columnas a mostrar (ajusta si tu req_6 devuelve otras claves)
     headers = [
         "pickup_datetime", "dropoff_datetime", "trip_distance",
         "total_amount", "pickup_barrio", "dropoff_barrio"

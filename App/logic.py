@@ -376,9 +376,12 @@ def req_5(catalog, fecha_str, hora_final_str, n):
     }
 
 def req_6(catalog, hora_inicial, hora_final, barrio_inicial, n):
-    """Retorna el resultado del requerimiento 6 (viajes por rango de hora y barrio)."""
+    """Retorna el resultado del requerimiento 6"""
 
     inicio = time.process_time()
+    
+    hora_inicial = int(hora_inicial)
+    hora_final = int(hora_final)
 
     total_viajes = 0
     total_distancia = 0
