@@ -114,22 +114,55 @@ def print_req_2(control):
 
 
 def print_req_3(control):
-    """
-        Función que imprime la solución del Requerimiento 3 en consola
-    """
-    distancia_inicial = float(input("Ingrese la distancia mínima (en millas): "))
-    distancia_final = float(input("Ingrese la distancia máxima (en millas): "))
-    N = int(input("Ingrese el número de trayectos a mostrar al inicio y al final: "))
+    # Solicitar parámetros al usuario
+    distancia_inicial = float(input("Distancia mínima (millas): "))
+    distancia_final = float(input("Distancia máxima (millas): "))
+    n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-    result = logic.req_3(control, distancia_inicial, distancia_final, N)
+    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
+    trips = control
 
-    print("\n--- Resultado del Requerimiento 3 ---")
-    print("Total de trayectos:", result["total_trayectos"])
-    print("Tiempo de ejecución (ms):", result["tiempo_ms"])
-    print("\nPrimeros trayectos:")
-    print(result["primeros"])
-    print("\nÚltimos trayectos:")
-    print(result["ultimos"])
+    # Llamar al requerimiento 3
+    res = logic.req_3(trips, distancia_inicial, distancia_final, n)
+
+    # Mostrar resultados generales
+    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_viajes']}\n")
+
+    # Si hay mensaje o no hay resultados
+    if "mensaje" in res:
+        print(res["mensaje"])
+        return
+
+    if not res["primeros"]:
+        print("No hay trayectos para mostrar.")
+        return
+
+    # Encabezados de columnas (según lo que devuelve req_3)
+    headers = [
+        "pickup_datetime",
+        "dropoff_datetime",
+        "trip_distance",
+        "total_amount",
+        "pickup_longitude",
+        "pickup_latitude",
+        "dropoff_longitude",
+        "dropoff_latitude"
+    ]
+
+    # Mostrar primeros trayectos
+    print("Primeros trayectos:")
+    primeros = [t for t in res["primeros"]["elements"]]
+    primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
+    print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
+    # Mostrar últimos trayectos
+    if res["ultimos"]:
+        print("\nÚltimos trayectos:")
+        ultimos = [t for t in res["ultimos"]["elements"]]
+        ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
+        print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
 
 
 def print_req_4(control):
@@ -227,34 +260,58 @@ def print_req_5(control):
 
 
 def print_req_6(control):
-    print("\n=== Requerimiento 6 ===")
-    try:
-        barrio = input("Ingrese el barrio de origen: ")
-        hora_inicial = int(input("Ingrese la hora inicial (0-23): "))
-        hora_final = int(input("Ingrese la hora final (0-23): "))
-        n = int(input("Ingrese el número de elementos a mostrar: "))
+    # Solicitar parámetros al usuario
+    hora_inicial = input("Hora inicial (HH, 0-23): ")
+    hora_final = input("Hora final (HH, 0-23): ")
+    barrio = input("Barrio de inicio: ").strip()
+    n = int(input("Número de trayectos a mostrar (N primeros y N últimos): "))
 
-        result = logic.req_6(control["model"]["catalog"]["trips"], control["model"]["catalog"]["neighborhoods"], barrio, hora_inicial, hora_final, n)
+    # Convertir las horas al formato esperado por req_6 ("%H:%M:%S")
+    hora_inicial_str = f"{int(hora_inicial):02d}:00:00"
+    hora_final_str = f"{int(hora_final):02d}:00:00"
 
-        if "mensaje" in result:
-            print(result["mensaje"])
-            return
+    # ⚙️ En tu caso, control YA es la lista de viajes (lt)
+    trips = control
 
-        print(f"\nTotal de viajes: {result['total_viajes']}")
-        print(f"Distancia promedio: {result['distancia_promedio']:.2f} km")
-        print(f"Duración promedio: {result['duracion_promedio']:.2f} minutos")
-        print(f"Barrio destino más visitado: {result['barrio_destino_mas_visitado']}")
-        print(f"Método de pago más usado: {result['metodo_mas_usado']}")
-        print(f"Método de pago con mayor recaudo: {result['metodo_mayor_recaudo']}")
-        print(f"Tiempo de ejecución: {result['tiempo_ms']:.2f} ms")
+    # Llamar al requerimiento 6
+    res = logic.req_6(trips, hora_inicial_str, hora_final_str, barrio, n)
 
-        # Mostrar tabla con los primeros barrios destino
-        print("\nTop barrios destino:")
-        tabla = result["primeros"]["elements"]
-        print(tabulate(tabla, headers="keys", tablefmt="grid", floatfmt=".2f"))
+    # Mostrar resultados generales
+    print(f"\nTiempo de ejecución: {res['tiempo_ms']:.2f} ms")
+    print(f"Total de trayectos encontrados: {res['total_trayectos']}\n")
 
-    except Exception as e:
-        print("Error al ejecutar el requerimiento 6:", e)
+    # Si hay mensaje o no hay resultados
+    if "mensaje" in res:
+        print(res["mensaje"])
+        return
+
+    if not res["primeros"]:
+        print("No hay trayectos para mostrar.")
+        return
+
+    # Encabezados de columnas (ajusta si tu req_6 devuelve otras claves)
+    headers = [
+        "pickup_datetime",
+        "dropoff_datetime",
+        "trip_distance",
+        "total_amount",
+        "pickup_barrio",
+        "dropoff_barrio"
+    ]
+
+    # Mostrar primeros trayectos
+    print("Primeros trayectos:")
+    primeros = [t for t in res["primeros"]["elements"]]
+    primeros_tab = [[t.get(h, "") for h in headers] for t in primeros]
+    print(tabulate(primeros_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
+    # Mostrar últimos trayectos
+    if res["ultimos"]:
+        print("\nÚltimos trayectos:")
+        ultimos = [t for t in res["ultimos"]["elements"]]
+        ultimos_tab = [[t.get(h, "") for h in headers] for t in ultimos]
+        print(tabulate(ultimos_tab, headers=headers, tablefmt="grid", floatfmt=".2f"))
+
 
 
 
