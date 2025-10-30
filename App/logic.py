@@ -382,6 +382,13 @@ def req_6(catalog, hora_inicial, hora_final, barrio_inicial, n):
     
     hora_inicial = int(hora_inicial)
     hora_final = int(hora_final)
+    
+    try:
+        hora_inicial = datetime.strptime(hora_inicial, "%H:%M:%S").hour
+        hora_final = datetime.strptime(hora_final, "%H:%M:%S").hour
+    except ValueError:
+        hora_inicial = int(hora_inicial)
+        hora_final = int(hora_final)
 
     total_viajes = 0
     total_distancia = 0
